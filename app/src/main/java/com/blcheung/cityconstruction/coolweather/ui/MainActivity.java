@@ -1,7 +1,9 @@
-package com.blcheung.cityconstruction.coolweather;
+package com.blcheung.cityconstruction.coolweather.ui;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+
+import com.blcheung.cityconstruction.coolweather.R;
 
 public class MainActivity extends AppCompatActivity {
 
