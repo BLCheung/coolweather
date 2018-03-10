@@ -78,7 +78,7 @@ public class ChooseAreaFragment extends Fragment {
      * 当前选中的级别
      */
     private int currentLevel;
-    private String adress = "http://guolin.tech/api/china";
+    private String adress = "http://guolin.tech/api/china/";
 
 
     @Nullable
@@ -192,7 +192,7 @@ public class ChooseAreaFragment extends Fragment {
      * @param adress 服务器地址
      * @param level 省,市,县/区级别
      */
-    private void queryFromServer(String adress, final int level) {
+    private void queryFromServer(String adress, final  int level) {
         // 显示加载对话框
         showProgressDialog();
         HttpUtil.sendOkHttpRequest(adress, new Callback() {
@@ -202,7 +202,7 @@ public class ChooseAreaFragment extends Fragment {
                 boolean result = false;
                 if (level == LEVEL_PROVINCE) {
                     result = Utility.handlerProvinceResponse(responseData);
-                } else if (level == LEVEL_CITY) {
+                } else if (level  == LEVEL_CITY) {
                     result = Utility.handlerCityResponse(responseData, selectedProvince.getId());
                 } else if (level == LEVEL_COUNTY) {
                     result = Utility.handlerCountyResponse(responseData, selectedCity.getId());
@@ -244,7 +244,7 @@ public class ChooseAreaFragment extends Fragment {
     private void showProgressDialog() {
         if (progressDialog == null) {
             progressDialog = new ProgressDialog(getActivity());
-            progressDialog.setMessage("正在加载");
+            progressDialog.setMessage("正在加载...");
             progressDialog.setCanceledOnTouchOutside(false);
         }
         progressDialog.show();
