@@ -1,10 +1,12 @@
 package com.blcheung.cityconstruction.coolweather.ui;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.blcheung.cityconstruction.coolweather.R;
+import com.blcheung.cityconstruction.coolweather.WeatherActivity;
 import com.blcheung.cityconstruction.coolweather.db.City;
 import com.blcheung.cityconstruction.coolweather.db.County;
 import com.blcheung.cityconstruction.coolweather.db.Province;
@@ -44,6 +47,7 @@ public class ChooseAreaFragment extends Fragment {
     public static final int LEVEL_CITY = 1;
     // 县/区级
     public static final int LEVEL_COUNTY = 2;
+    public static final String EXTRA_WEATHERID = "weather_id";
     private TextView tvTitle;
     private Button btnBack;
     private ProgressDialog progressDialog;
@@ -70,10 +74,6 @@ public class ChooseAreaFragment extends Fragment {
      * 选中的市
      */
     private City selectedCity;
-    /**
-     * 选中的县/区
-     */
-    private County selectedCounty;
     /**
      * 当前选中的级别
      */
@@ -102,6 +102,16 @@ public class ChooseAreaFragment extends Fragment {
                 if (currentLevel == LEVEL_PROVINCE) {
                     selectedProvince = provinceList.get(position);
                     queryCities();
+                } else if (currentLevel == LEVEL_CITY) {
+                    selectedCity = cityList.get(position);
+                    queryCounties();
+                } else if (currentLevel == LEVEL_COUNTY) {
+                    String weatherId = countyList.get(position).getWeatherId();
+                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                    // 传递当前选中的区/县的weatherId到WeatherActivity
+                    intent.putExtra(EXTRA_WEATHERID, weatherId);
+                    startActivity(intent);
+                    getActivity().finish();
                 }
             }
         });
@@ -171,7 +181,7 @@ public class ChooseAreaFragment extends Fragment {
         btnBack.setVisibility(View.VISIBLE);
         // 查询被选中的城市内所有区/县
         countyList = DataSupport.where("cityid = ?",
-                String.valueOf(selectedCity.getCityCode())).find(County.class);
+                String.valueOf(selectedCity.getId())).find(County.class);
         if (countyList.size() > 0) {
             dataList.clear();
             for (County county : countyList) {
@@ -189,10 +199,11 @@ public class ChooseAreaFragment extends Fragment {
 
     /**
      * 根据传入的地址和各省,市,县/区级别从服务器获取省市县数据
+     *
      * @param adress 服务器地址
-     * @param level 省,市,县/区级别
+     * @param level  省,市,县/区级别
      */
-    private void queryFromServer(String adress, final  int level) {
+    private void queryFromServer(String adress, final int level) {
         // 显示加载对话框
         showProgressDialog();
         HttpUtil.sendOkHttpRequest(adress, new Callback() {
@@ -202,10 +213,11 @@ public class ChooseAreaFragment extends Fragment {
                 boolean result = false;
                 if (level == LEVEL_PROVINCE) {
                     result = Utility.handlerProvinceResponse(responseData);
-                } else if (level  == LEVEL_CITY) {
+                } else if (level == LEVEL_CITY) {
                     result = Utility.handlerCityResponse(responseData, selectedProvince.getId());
                 } else if (level == LEVEL_COUNTY) {
                     result = Utility.handlerCountyResponse(responseData, selectedCity.getId());
+                    Log.d("handlerCounty: ", "" + result);
                 }
                 if (result) {
                     // 切换主线程更新UI
@@ -231,7 +243,7 @@ public class ChooseAreaFragment extends Fragment {
                     @Override
                     public void run() {
                         closeProgressDialog();
-                        Toast.makeText(getContext(), "加载失败!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "从服务器获取天气信息失败!", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
