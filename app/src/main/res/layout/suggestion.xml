@@ -22,15 +22,50 @@
         android:layout_margin="@dimen/layout_margin"
         android:textColor="@color/colorWhite" />
 
+    <!--<TextView-->
+    <!--android:id="@+id/tv_suggestion_air"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_margin="@dimen/layout_margin"-->
+    <!--android:textColor="@color/colorWhite" />-->
+
+    <!--<TextView-->
+    <!--android:id="@+id/tv_suggestion_drsg"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_margin="@dimen/layout_margin"-->
+    <!--android:textColor="@color/colorWhite" />-->
+
+    <!--<TextView-->
+    <!--android:id="@+id/tv_suggestion_flu"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_margin="@dimen/layout_margin"-->
+    <!--android:textColor="@color/colorWhite" />-->
+
     <TextView
-        android:id="@+id/tv_suggestion_drsg"
+        android:id="@+id/tv_suggestion_sport"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/layout_margin"
         android:textColor="@color/colorWhite" />
 
+    <!--<TextView-->
+    <!--android:id="@+id/tv_suggestion_travel"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_margin="@dimen/layout_margin"-->
+    <!--android:textColor="@color/colorWhite" />-->
+
+    <!--<TextView-->
+    <!--android:id="@+id/tv_suggestion_uv"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_margin="@dimen/layout_margin"-->
+    <!--android:textColor="@color/colorWhite" />-->
+
     <TextView
-        android:id="@+id/tv_suggestion_sport"
+        android:id="@+id/tv_suggestion_cw"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/layout_margin"

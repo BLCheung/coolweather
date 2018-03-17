@@ -31,6 +31,7 @@ public class Suggestion {
     /**
      * 洗车指数
      */
+    @SerializedName("cw")
     private CwBean cw;
     /**
      * 穿衣指数
@@ -40,6 +41,7 @@ public class Suggestion {
     /**
      * 感冒指数
      */
+    @SerializedName("flu")
     private FluBean flu;
     /**
      * 运动指数
@@ -49,10 +51,12 @@ public class Suggestion {
     /**
      * 旅游指数
      */
+    @SerializedName("trav")
     private TravBean trav;
     /**
      * 紫外线指数
      */
+    @SerializedName("uv")
     private UvBean uv;
 
     public AirBean getAir() {
