@@ -4,11 +4,17 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -22,6 +28,7 @@ import com.blcheung.cityconstruction.coolweather.util.HttpUtil;
 import com.blcheung.cityconstruction.coolweather.util.Utility;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.GlideBuilder;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 
 import java.io.IOException;
 
@@ -33,14 +40,18 @@ public class WeatherActivity extends AppCompatActivity {
 
     public static final String PREFS_WEATHER = "prefs_weather";
     public static final String PREFS_BINGPIC = "prefs_bingpic";
+    public DrawerLayout dlDrawerLayout;
+    private Button btnTitleNav;
     private ScrollView svWeather;
     private LinearLayout llDailyForecast;
+    public SwipeRefreshLayout slRefreshWeather;
     private ImageView ivWeatherBingpic;
     private TextView tvTitleCity, tvTitleUpdateTime;
     private TextView tvNowDegree, tvNowWeatherInfo;
     private TextView tvAqiaqi, tvAqiPM25;
     private TextView tvSuggestionComfort, tvSuggsetionSport, tvSuggestionCw;
-//    private TextView tvSuggestionFlu, tvSuggestionTravel, tvSuggestionUv, tvSuggestionAir, tvSuggestionDress;
+    private SharedPreferences prefs;
+    public String weatherId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,19 +67,36 @@ public class WeatherActivity extends AppCompatActivity {
         setContentView(R.layout.activity_weather);
         // 初始化控件
         initViews();
+        btnTitleNav.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dlDrawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
+        slRefreshWeather.setColorSchemeColors(ContextCompat
+                .getColor(this, R.color.colorPrimary));
         // 从本地缓存中获取天气信息
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String prefsString = prefs.getString(PREFS_WEATHER, null);
         if (prefsString != null) {
             // 有缓存时直接解析天气数据
             Weather handlerWeatherResponse = Utility.handlerWeatherResponse(prefsString);
+            weatherId = handlerWeatherResponse.getBasic().getId();
             showWeatherInfo(handlerWeatherResponse);
         } else {
             // 无缓存时从服务器中获取
-            String weatherId = getIntent().getStringExtra(ChooseAreaFragment.EXTRA_WEATHERID);
+            weatherId = getIntent().getStringExtra(ChooseAreaFragment.EXTRA_WEATHERID);
             svWeather.setVisibility(View.INVISIBLE);
             requestWeather(weatherId);
         }
+        // 刷新
+        slRefreshWeather.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                loadBingPic();
+                requestWeather(weatherId);
+            }
+        });
         // 本地缓存获取必应每日一图
         String prefsBingPic = prefs.getString(PREFS_BINGPIC, null);
         if (prefsBingPic != null) {
@@ -85,9 +113,12 @@ public class WeatherActivity extends AppCompatActivity {
     private void initViews() {
         svWeather = findViewById(R.id.sv_weather_layout);
         llDailyForecast = findViewById(R.id.ll_daily_forecast_layout);
+        slRefreshWeather = findViewById(R.id.sl_refresh_weather);
         ivWeatherBingpic = findViewById(R.id.iv_weather_bing_pic);
+        dlDrawerLayout = findViewById(R.id.dl_drawer_layout);
         // Title.xml
         tvTitleCity = findViewById(R.id.tv_title_city);
+        btnTitleNav = findViewById(R.id.btn_title_nav_button);
         tvTitleUpdateTime = findViewById(R.id.tv_title_update_time);
         // Now.xml
         tvNowDegree = findViewById(R.id.tv_now_degree);
@@ -105,6 +136,8 @@ public class WeatherActivity extends AppCompatActivity {
 //        tvSuggestionTravel = findViewById(R.id.tv_suggestion_travel);
 //        tvSuggestionUv = findViewById(R.id.tv_suggestion_uv);
     }
+
+    //    private TextView tvSuggestionFlu, tvSuggestionTravel, tvSuggestionUv, tvSuggestionAir, tvSuggestionDress;
 
     /**
      * 根据weatherId从服务器请求城市天气信息
@@ -134,6 +167,7 @@ public class WeatherActivity extends AppCompatActivity {
                                     "服务器返回信息有误或数据解析错误!",
                                     Toast.LENGTH_SHORT).show();
                         }
+                        slRefreshWeather.setRefreshing(false);
                     }
                 });
             }
@@ -146,6 +180,7 @@ public class WeatherActivity extends AppCompatActivity {
                         Toast.makeText(WeatherActivity.this,
                                 "服务器无响应,无法获取到信息!",
                                 Toast.LENGTH_SHORT).show();
+                        slRefreshWeather.setRefreshing(false);
                     }
                 });
             }
@@ -167,6 +202,7 @@ public class WeatherActivity extends AppCompatActivity {
         tvNowDegree.setText(degree);
         tvNowWeatherInfo.setText(weatherInfo);
         llDailyForecast.removeAllViews();
+        // 遍历最近几天的天气信息
         for (DailyForecast dailyForecast : weather.getDailyForecastList()) {
             View view = LayoutInflater.from(this).inflate(R.layout.daily_forecast_item,
                     llDailyForecast, false);
@@ -219,16 +255,25 @@ public class WeatherActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+//                        String prefsString = prefs.getString(PREFS_BINGPIC, null);
+//                        if (prefsString != null && prefsString.equals(responseBingPic)) {
+//                            Glide.with(WeatherActivity.this)
+//                                    .load(prefsString)
+//                                    .into(ivWeatherBingpic);
+//                        } else {
                         Glide.with(WeatherActivity.this)
                                 .load(responseBingPic)
+                                .diskCacheStrategy(DiskCacheStrategy.ALL)
                                 .into(ivWeatherBingpic);
+//                        }
                     }
                 });
             }
 
             @Override
             public void onFailure(Call call, IOException e) {
-
+                Toast.makeText(WeatherActivity.this, "图片加载失败!",
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
