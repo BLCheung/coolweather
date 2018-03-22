@@ -1,5 +1,6 @@
 package com.blcheung.cityconstruction.coolweather;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -12,6 +13,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -23,6 +25,7 @@ import android.widget.Toast;
 
 import com.blcheung.cityconstruction.coolweather.gson.DailyForecast;
 import com.blcheung.cityconstruction.coolweather.gson.Weather;
+import com.blcheung.cityconstruction.coolweather.service.AutoUpdateService;
 import com.blcheung.cityconstruction.coolweather.ui.ChooseAreaFragment;
 import com.blcheung.cityconstruction.coolweather.util.HttpUtil;
 import com.blcheung.cityconstruction.coolweather.util.Utility;
@@ -52,6 +55,7 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView tvSuggestionComfort, tvSuggsetionSport, tvSuggestionCw;
     private SharedPreferences prefs;
     public String weatherId;
+    private long firstClickTime = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -193,50 +197,58 @@ public class WeatherActivity extends AppCompatActivity {
      * @param weather
      */
     private void showWeatherInfo(Weather weather) {
-        String cityName = weather.getBasic().getCity();
-        String updateTime = weather.getBasic().getUpdate().getLoc().split(" ")[1];
-        String degree = weather.getNow().getTmp() + "°C";
-        String weatherInfo = weather.getNow().getCond().getTxt();
-        tvTitleCity.setText(cityName);
-        tvTitleUpdateTime.setText(updateTime);
-        tvNowDegree.setText(degree);
-        tvNowWeatherInfo.setText(weatherInfo);
-        llDailyForecast.removeAllViews();
-        // 遍历最近几天的天气信息
-        for (DailyForecast dailyForecast : weather.getDailyForecastList()) {
-            View view = LayoutInflater.from(this).inflate(R.layout.daily_forecast_item,
-                    llDailyForecast, false);
-            TextView tvItemDate = view.findViewById(R.id.tv_item_date);
-            TextView tvItemInfo = view.findViewById(R.id.tv_item_info);
-            TextView tvItemMax = view.findViewById(R.id.tv_item_max);
-            TextView tvItemMin = view.findViewById(R.id.tv_item_min);
-            tvItemDate.setText(dailyForecast.getDate());
-            tvItemInfo.setText(dailyForecast.getCond().getTxt_d());
-            tvItemMax.setText(dailyForecast.getTmp().getMax());
-            tvItemMin.setText(dailyForecast.getTmp().getMin());
-            llDailyForecast.addView(view);
-        }
-        if (weather.getAqi() != null) {
-            tvAqiaqi.setText(weather.getAqi().getCity().getAqi());
-            tvAqiPM25.setText(weather.getAqi().getCity().getPm25());
-        }
-        String comfort = "舒适度: " + weather.getSuggestion().getComf().getTxt();
+        if (weather != null && "ok".equals(weather.getStatus())) {
+            String cityName = weather.getBasic().getCity();
+            String updateTime = weather.getBasic().getUpdate().getLoc().split(" ")[1];
+            String degree = weather.getNow().getTmp() + "°C";
+            String weatherInfo = weather.getNow().getCond().getTxt();
+            tvTitleCity.setText(cityName);
+            tvTitleUpdateTime.setText(updateTime);
+            tvNowDegree.setText(degree);
+            tvNowWeatherInfo.setText(weatherInfo);
+            llDailyForecast.removeAllViews();
+            // 遍历最近几天的天气信息
+            for (DailyForecast dailyForecast : weather.getDailyForecastList()) {
+                View view = LayoutInflater.from(this).inflate(R.layout.daily_forecast_item,
+                        llDailyForecast, false);
+                TextView tvItemDate = view.findViewById(R.id.tv_item_date);
+                TextView tvItemInfo = view.findViewById(R.id.tv_item_info);
+                TextView tvItemMax = view.findViewById(R.id.tv_item_max);
+                TextView tvItemMin = view.findViewById(R.id.tv_item_min);
+                tvItemDate.setText(dailyForecast.getDate());
+                tvItemInfo.setText(dailyForecast.getCond().getTxt_d());
+                tvItemMax.setText(dailyForecast.getTmp().getMax());
+                tvItemMin.setText(dailyForecast.getTmp().getMin());
+                llDailyForecast.addView(view);
+            }
+            if (weather.getAqi() != null) {
+                tvAqiaqi.setText(weather.getAqi().getCity().getAqi());
+                tvAqiPM25.setText(weather.getAqi().getCity().getPm25());
+            }
+            String comfort = "舒适度: " + weather.getSuggestion().getComf().getTxt();
 //        String drsg = "穿衣指数: " + weather.getSuggestion().getDrsg().getTxt();
-        String sport = "运动指数: " + weather.getSuggestion().getSport().getTxt();
-        String carWash = "洗车指数: " + weather.getSuggestion().getCw().getTxt();
+            String sport = "运动指数: " + weather.getSuggestion().getSport().getTxt();
+            String carWash = "洗车指数: " + weather.getSuggestion().getCw().getTxt();
 //        String air = "空气指数: " + weather.getSuggestion().getAir().getTxt();
 //        String flu = "感冒指数: " + weather.getSuggestion().getFlu().getTxt();
 //        String travel = "旅游指数: " + weather.getSuggestion().getTrav().getTxt();
 //        String uv = "紫外线指数: " + weather.getSuggestion().getUv().getTxt();
 //        tvSuggestionAir.setText(air);
-        tvSuggestionComfort.setText(comfort);
+            tvSuggestionComfort.setText(comfort);
 //        tvSuggestionDress.setText(drsg);
-        tvSuggsetionSport.setText(sport);
+            tvSuggsetionSport.setText(sport);
 //        tvSuggestionFlu.setText(flu);
 //        tvSuggestionTravel.setText(travel);
 //        tvSuggestionUv.setText(uv);
-        tvSuggestionCw.setText(carWash);
-        svWeather.setVisibility(View.VISIBLE);
+            tvSuggestionCw.setText(carWash);
+            svWeather.setVisibility(View.VISIBLE);
+            // 启动更新服务
+            Intent autoUpdateIntent = new Intent(this, AutoUpdateService.class);
+            startService(autoUpdateIntent);
+        } else {
+            Toast.makeText(WeatherActivity.this, "获取天气信息失败!",
+                    Toast.LENGTH_SHORT).show();
+        }
     }
 
     /**
@@ -272,9 +284,30 @@ public class WeatherActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call call, IOException e) {
-                Toast.makeText(WeatherActivity.this, "图片加载失败!",
-                        Toast.LENGTH_SHORT).show();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(WeatherActivity.this, "图片加载失败!",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
         });
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN) {
+            // 如果点击两次返回键的间隔小于两秒,则退出.
+            if (System.currentTimeMillis() - firstClickTime > 2000) {
+                Toast.makeText(this, "再按一次退出", Toast.LENGTH_SHORT).show();
+                firstClickTime = System.currentTimeMillis();
+            } else {
+                finish();
+                System.exit(0);
+            }
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 }
